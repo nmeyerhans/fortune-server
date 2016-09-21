@@ -6,7 +6,7 @@ import (
 )
 
 func Fortune(formatJSON bool) (string, error) {
-	cmd := exec.Command("fortune")
+	cmd := exec.Command("/usr/games/fortune")
 	output, err := cmd.CombinedOutput()
 	if(err != nil) {
 		return "", err
