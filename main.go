@@ -30,26 +30,32 @@ func serveHealthcheck(w http.ResponseWriter, req *http.Request) {
 func serveFortune(w http.ResponseWriter, req *http.Request) {
 	responseSize := 0
 	responseCode := http.StatusOK
+	var body []byte
+
 	defer func() {
 		logRequest(req, responseCode, responseSize)
 	}()
-	f, err := fortune.Fortune(true)
+	fortune_text, err := fortune.Fortune(true)
 	if err != nil {
 		responseCode = http.StatusInternalServerError
 		log.Fatal(err)
 	}
-	m := Fortune{f}
-	b, err := json.Marshal(m)
-	if(err != nil) {
-		responseCode = http.StatusInternalServerError
-		log.Fatal(err)
+	if req.Header.Get("Accept") == "application/javascript" {
+		m := Fortune{fortune_text}
+		body, err = json.Marshal(m)
+		if(err != nil) {
+			responseCode = http.StatusInternalServerError
+			log.Fatal(err)
+		}
+	} else {
+		body = []byte(fortune_text)
 	}
 	if req.Header.Get("UserAgent") != "" {
 		fmt.Printf("Got a request from a %s browser\n", req.Header.Get("UserAgent"))
 	}
-	// fmt.Print(string(b))
-	responseSize = len(b)
-	w.Write(b)
+	// fmt.Print(string(body))
+	responseSize = len(body)
+	w.Write([]byte(body))
 }
 
 func main() {
