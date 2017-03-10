@@ -35,7 +35,7 @@ func serveFortune(w http.ResponseWriter, req *http.Request) {
 	defer func() {
 		logRequest(req, responseCode, responseSize)
 	}()
-	fortune_text, err := fortune.Fortune(true)
+	fortune_text, err := fortune.Fortune(false)
 	if err != nil {
 		responseCode = http.StatusInternalServerError
 		log.Fatal(err)
