@@ -13,7 +13,11 @@ type Fortune struct {
 }
 
 func logRequest(req *http.Request, responseCode int, responseSize int) {
-	log.Printf("%s %s%s %d %d\n", req.RemoteAddr, req.Host, req.RequestURI, responseCode, responseSize)
+	remoteAddr := req.Header.Get("X-Forwarded-For")
+	if remoteAddr == "" {
+		remoteAddr = req.RemoteAddr
+	}
+	log.Printf("%s %s%s %d %d\n", remoteAddr, req.Host, req.RequestURI, responseCode, responseSize)
 }
 
 func serveHealthcheck(w http.ResponseWriter, req *http.Request) {
