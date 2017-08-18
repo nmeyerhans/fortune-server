@@ -15,7 +15,7 @@
 package main
 
 import (
-	"github.com/nmeyerhans/hello-http/fortune"
+	"github.com/nmeyerhans/fortune-server/fortune"
 	"encoding/json"
 	"fmt"
 	"log"

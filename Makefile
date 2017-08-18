@@ -12,14 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-hello-http: main.go
+.PHONY: clean docker all
+
+fortune-server: main.go
 	go build
 
 clean:
 	rm -f *~ fortune/*~ ecs/*~
 	go clean
 
-docker: hello-http
+docker: fortune-server
 	docker build -t hello-http .
 
 all: docker

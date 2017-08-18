@@ -18,6 +18,6 @@ RUN apt-get update && apt-get -y install curl fortune-mod fortunes-bofh-excuses 
 
 RUN curl -sL -o /tmp/fortunes-spam.deb http://mirrors.cat.pdx.edu/ubuntu/pool/universe/f/fortunes-spam/fortunes-spam_1.8-0ubuntu1_all.deb && dpkg -i /tmp/fortunes-spam.deb
 
-COPY hello-http /
+COPY fortune-server /
 
-ENTRYPOINT "/hello-http"
+ENTRYPOINT "/fortune-server"
