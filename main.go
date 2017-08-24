@@ -41,6 +41,7 @@ func makeHealthcheckFunc(reqCounter chan<- int, errCounter chan<- int, byteCount
 		responseCode := http.StatusOK
 		defer func() {
 			reqCounter <- 1
+			byteCounter <- uint64(responseSize)
 			logRequest(req, responseCode, responseSize)
 		}()
 		if !fortune.Available() {
@@ -51,7 +52,7 @@ func makeHealthcheckFunc(reqCounter chan<- int, errCounter chan<- int, byteCount
 	}
 }
 
-func makeServerFunc(reqCounter chan<- int, errCounter chan<- int) func(w http.ResponseWriter, req *http.Request) {
+func makeServerFunc(reqCounter chan<- int, errCounter chan<- int, byteCounter chan<- uint64) func(w http.ResponseWriter, req *http.Request) {
 
 	return func(w http.ResponseWriter, req *http.Request) {
 		responseSize := 0
@@ -59,12 +60,13 @@ func makeServerFunc(reqCounter chan<- int, errCounter chan<- int) func(w http.Re
 		var body []byte
 
 		defer func() {
-			reqCounter <-1
+			reqCounter <- 1
+			byteCounter <- uint64(responseSize)
 			logRequest(req, responseCode, responseSize)
 		}()
 		fortune_text, err := fortune.Fortune(false)
 		if err != nil {
-			errCounter <-1
+			errCounter <- 1
 			responseCode = http.StatusInternalServerError
 			log.Fatal(err)
 		}
@@ -89,23 +91,26 @@ func makeServerFunc(reqCounter chan<- int, errCounter chan<- int) func(w http.Re
 	}
 }
 
-func dumpStats(requests int, errors int) {
-	log.Printf("Runtime stats: Total requests: %d, Failures: %d", requests, errors)
+func dumpStats(requests int, errors int, bytes uint64) {
+	log.Printf("Runtime stats: Total requests: %d, Failures: %d, Bytes sent: %d", requests, errors, bytes)
 }
 
-func statsTracker(requestCounter <-chan int, failureCounter <-chan int) {
-	requests := 0
-	errors   := 0
+func statsTracker(requestCounter <-chan int, failureCounter <-chan int, byteCounter <-chan uint64) {
+	requests  := 0
+	errors    := 0
+	var bytesSent uint64 = 0
 	t := time.NewTicker(10 * time.Second)
 
 	for {
 		select {
 		case <-t.C:
-			go dumpStats(requests, errors)
+			go dumpStats(requests, errors, bytesSent)
 		case <-requestCounter:
 			requests += 1
 		case <-failureCounter:
 			errors += 1
+		case b := <-byteCounter:
+			bytesSent += b
 		}
 	}
 }
@@ -113,10 +118,11 @@ func statsTracker(requestCounter <-chan int, failureCounter <-chan int) {
 func main() {
 	requestCounter := make(chan int)
 	errorCounter   := make(chan int)
+	byteCounter    := make(chan uint64)
 
-	go statsTracker(requestCounter, errorCounter)
-	http.Handle("/status", http.HandlerFunc(makeHealthcheckFunc(requestCounter, errorCounter)))
-	http.Handle("/", http.HandlerFunc(makeServerFunc(requestCounter, errorCounter)))
+	go statsTracker(requestCounter, errorCounter, byteCounter)
+	http.Handle("/status", http.HandlerFunc(makeHealthcheckFunc(requestCounter, errorCounter, byteCounter)))
+	http.Handle("/", http.HandlerFunc(makeServerFunc(requestCounter, errorCounter, byteCounter)))
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
