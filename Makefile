@@ -14,6 +14,8 @@
 
 .PHONY: clean docker all
 
+DOCKER_TAG:=latest
+
 fortune-server: main.go
 	go build
 
@@ -22,6 +24,6 @@ clean:
 	go clean
 
 docker: fortune-server
-	docker build -t hello-http .
+	docker build -t fortune-server:$(DOCKER_TAG) .
 
 all: docker
