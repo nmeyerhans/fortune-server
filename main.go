@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 )
 
 type Fortune struct {
@@ -34,51 +35,88 @@ func logRequest(req *http.Request, responseCode int, responseSize int) {
 	log.Printf("%s %s%s %d %d\n", remoteAddr, req.Host, req.RequestURI, responseCode, responseSize)
 }
 
-func serveHealthcheck(w http.ResponseWriter, req *http.Request) {
-	responseSize := 0
-	responseCode := http.StatusOK
-	defer func() {
-		logRequest(req, responseCode, responseSize)
-	}()
-	if !fortune.Available() {
-		responseCode = http.StatusInternalServerError
+func makeHealthcheckFunc(reqCounter chan<- int, errCounter chan<- int, byteCounter chan<- uint64) func(w http.ResponseWriter, req *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
+		responseSize := 0
+		responseCode := http.StatusOK
+		defer func() {
+			reqCounter <- 1
+			logRequest(req, responseCode, responseSize)
+		}()
+		if !fortune.Available() {
+			errCounter <- 1
+			responseCode = http.StatusInternalServerError
+		}
+		w.WriteHeader(responseCode)
 	}
 }
 
-func serveFortune(w http.ResponseWriter, req *http.Request) {
-	responseSize := 0
-	responseCode := http.StatusOK
-	var body []byte
+func makeServerFunc(reqCounter chan<- int, errCounter chan<- int) func(w http.ResponseWriter, req *http.Request) {
 
-	defer func() {
-		logRequest(req, responseCode, responseSize)
-	}()
-	fortune_text, err := fortune.Fortune(false)
-	if err != nil {
-		responseCode = http.StatusInternalServerError
-		log.Fatal(err)
-	}
-	if req.Header.Get("Accept") == "application/javascript" {
-		m := Fortune{fortune_text}
-		body, err = json.Marshal(m)
-		if(err != nil) {
+	return func(w http.ResponseWriter, req *http.Request) {
+		responseSize := 0
+		responseCode := http.StatusOK
+		var body []byte
+
+		defer func() {
+			reqCounter <-1
+			logRequest(req, responseCode, responseSize)
+		}()
+		fortune_text, err := fortune.Fortune(false)
+		if err != nil {
+			errCounter <-1
 			responseCode = http.StatusInternalServerError
 			log.Fatal(err)
 		}
-	} else {
-		body = []byte(fortune_text)
+		if req.Header.Get("Accept") == "application/javascript" {
+			m := Fortune{fortune_text}
+			body, err = json.Marshal(m)
+			if(err != nil) {
+				errCounter <-1
+				responseCode = http.StatusInternalServerError
+				log.Fatal(err)
+			}
+		} else {
+			body = []byte(fortune_text)
+		}
+		if req.Header.Get("UserAgent") != "" {
+			fmt.Printf("Got a request from a %s browser\n", req.Header.Get("UserAgent"))
+		}
+		// fmt.Print(string(body))
+		responseSize = len(body)
+		w.WriteHeader(responseCode)
+		w.Write([]byte(body))
 	}
-	if req.Header.Get("UserAgent") != "" {
-		fmt.Printf("Got a request from a %s browser\n", req.Header.Get("UserAgent"))
+}
+
+func dumpStats(requests int, errors int) {
+	log.Printf("Runtime stats: Total requests: %d, Failures: %d", requests, errors)
+}
+
+func statsTracker(requestCounter <-chan int, failureCounter <-chan int) {
+	requests := 0
+	errors   := 0
+	t := time.NewTicker(10 * time.Second)
+
+	for {
+		select {
+		case <-t.C:
+			go dumpStats(requests, errors)
+		case <-requestCounter:
+			requests += 1
+		case <-failureCounter:
+			errors += 1
+		}
 	}
-	// fmt.Print(string(body))
-	responseSize = len(body)
-	w.Write([]byte(body))
 }
 
 func main() {
-	http.Handle("/status", http.HandlerFunc(serveHealthcheck))
-	http.Handle("/", http.HandlerFunc(serveFortune))
+	requestCounter := make(chan int)
+	errorCounter   := make(chan int)
+
+	go statsTracker(requestCounter, errorCounter)
+	http.Handle("/status", http.HandlerFunc(makeHealthcheckFunc(requestCounter, errorCounter)))
+	http.Handle("/", http.HandlerFunc(makeServerFunc(requestCounter, errorCounter)))
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
