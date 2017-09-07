@@ -20,4 +20,4 @@ RUN curl -sL -o /tmp/fortunes-spam.deb http://mirrors.cat.pdx.edu/ubuntu/pool/un
 
 COPY fortune-server /
 
-ENTRYPOINT "/fortune-server"
+ENTRYPOINT ["/fortune-server"]
