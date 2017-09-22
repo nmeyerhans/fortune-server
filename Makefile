@@ -14,7 +14,15 @@
 
 .PHONY: clean docker all
 
+SUBDIRS:=fortune server
 DOCKER_TAG:=latest
+
+all: fortune-server
+
+test:
+	@for dir in $(SUBDIRS); do \
+		( cd $$dir && go test -cover ) ; \
+	done
 
 fortune-server: main.go
 	go build
@@ -26,4 +34,3 @@ clean:
 docker: fortune-server
 	docker build -t fortune-server:$(DOCKER_TAG) .
 
-all: docker
