@@ -16,16 +16,15 @@ package fortune
 
 import (
 	"encoding/base64"
-	"os"
 	"os/exec"
 )
 
 const (
-	FortuneCmd = "/usr/games/fortune"
+	FortuneCmd = "fortune"
 )
 
-func Available() (bool) {
-	_, err := os.Stat(FortuneCmd)
+func Available(cmd string) (bool) {
+	_, err := exec.LookPath(cmd)
 	if err != nil {
 		return false
 	}

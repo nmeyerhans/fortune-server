@@ -19,13 +19,23 @@ import (
 )
 
 func TestAvailable(t *testing.T) {
-	if !Available() {
-		t.Error("fortune is not available")
+	if !Available("/sbin/init") {
+		t.Error("did not correctly identify file existence")
+	}
+	if Available("/sbin/xyzinit_xyz") {
+		t.Error("did not identify file nonexistence")
 	}
 }
 
 func TestFortuneExec(t *testing.T) {
 	str, err := Fortune(true)
+	if err != nil {
+		t.Fatalf("Fortune returned unexpected error %s", err)
+	}
+	if len(str) == 0 {
+		t.Error("Fortune returned successfully but with no content.")
+	}
+	str, err = Fortune(false)
 	if err != nil {
 		t.Fatalf("Fortune returned unexpected error %s", err)
 	}
