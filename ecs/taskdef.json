@@ -3,17 +3,25 @@
   "networkMode": "bridge",
   "containerDefinitions": [
     {
-      "name": "hello-server",
-      "essential": true,
-      "image": "938878489526.dkr.ecr.us-west-2.amazonaws.com/fortune-server",
       "cpu": 300,
       "memory": 100,
       "portMappings": [
         {
           "containerPort": 8080,
-          "hostPort": 8080
+          "protocol": "tcp"
         }
-      ]
+      ],
+      "essential": true,
+      "name": "hello-server",
+      "image": "938878489526.dkr.ecr.us-west-2.amazonaws.com/fortune-server:209b223d",
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "hello-server",
+          "awslogs-region": "us-west-2",
+          "awslogs-stream-prefix": "hello-server"
+        }
+      }
     }
   ]
 }
