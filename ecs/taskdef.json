@@ -1,1 +1,19 @@
-{"family":"fortune-server","networkMode":"bridge","containerDefinitions":[{"name":"hello-server","essential":true,"image":"938878489526.dkr.ecr.us-west-2.amazonaws.com/fortune-server","cpu":300,"memory":100,"portMappings":[{"containerPort":8080,"hostPort":8080}]}]}
+{
+  "family": "fortune-server",
+  "networkMode": "bridge",
+  "containerDefinitions": [
+    {
+      "name": "hello-server",
+      "essential": true,
+      "image": "938878489526.dkr.ecr.us-west-2.amazonaws.com/fortune-server",
+      "cpu": 300,
+      "memory": 100,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "hostPort": 8080
+        }
+      ]
+    }
+  ]
+}
