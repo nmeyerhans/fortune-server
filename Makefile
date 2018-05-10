@@ -12,24 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.PHONY: clean docker all
+.PHONY: clean docker all test
 
 SUBDIRS:=fortune server
 DOCKER_TAG:=latest
 
-all: fortune-server
+GO       = go
+NAME     = fortune-server
+PACKAGE  = github.com/nmeyerhans/fortune-server
+# If changing GOPATH, be careful about the 'clean' rule:
+GOPATH   = $(CURDIR)/.gopath
+BASE     = $(GOPATH)/src/$(PACKAGE)
 
-test:
-	@for dir in $(SUBDIRS); do \
+fortune-server all: | $(BASE)
+	cd $(BASE) && $(GO) build -o $(NAME) main.go
+
+$(BASE):
+	@mkdir -p $(dir $@)
+	@ln -sf $(CURDIR) $@
+
+test: | $(BASE)
+	@cd $(BASE) && for dir in $(SUBDIRS); do \
 		( cd $$dir && go test -cover ) ; \
 	done
-
-fortune-server: main.go
-	go build
 
 clean:
 	rm -f *~ fortune/*~ ecs/*~
 	go clean
+	-rm -r $(GOPATH)
 
 docker: fortune-server
 	docker build -t fortune-server:$(DOCKER_TAG) .
