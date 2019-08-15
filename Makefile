@@ -35,5 +35,5 @@ clean:
 	go clean
 
 docker: fortune-server
-	docker build -t fortune-server:$(DOCKER_TAG) .
+	docker build --pull=true -t fortune-server:$(DOCKER_TAG) .
 
