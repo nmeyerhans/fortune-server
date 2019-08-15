@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+export GO111MODULE=on
+
 .PHONY: clean docker all test
 
 SUBDIRS:=fortune server
@@ -19,27 +21,18 @@ DOCKER_TAG:=latest
 
 GO       = go
 NAME     = fortune-server
-PACKAGE  = github.com/nmeyerhans/fortune-server
-# If changing GOPATH, be careful about the 'clean' rule:
-GOPATH   = $(CURDIR)/.gopath
-BASE     = $(GOPATH)/src/$(PACKAGE)
 
-fortune-server all: | $(BASE)
-	cd $(BASE) && $(GO) build -o $(NAME) main.go
+fortune-server all:
+	$(GO) build -o $(NAME) main.go
 
-$(BASE):
-	@mkdir -p $(dir $@)
-	@ln -sf $(CURDIR) $@
-
-test: | $(BASE)
-	@cd $(BASE) && for dir in $(SUBDIRS); do \
+test:
+	for dir in $(SUBDIRS); do \
 		( cd $$dir && go test -cover ) ; \
 	done
 
 clean:
 	rm -f *~ fortune/*~ ecs/*~
 	go clean
-	-rm -r $(GOPATH)
 
 docker: fortune-server
 	docker build -t fortune-server:$(DOCKER_TAG) .
