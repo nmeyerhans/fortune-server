@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	FortuneCmd = "fortune"
+	FortuneCmd = "/usr/games/fortune"
 )
 
 // Available checks that the external fortune command is present in the PATH
