@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	fortuneCmd = "fortune"
+	FortuneCmd = "fortune"
 )
 
 // Available checks that the external fortune command is present in the PATH
@@ -34,7 +34,7 @@ func Available(cmd string) bool {
 
 //Fortune returns a fortune string.
 func Fortune(formatJSON bool) (string, error) {
-	cmd := exec.Command(fortuneCmd)
+	cmd := exec.Command(FortuneCmd)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", err
