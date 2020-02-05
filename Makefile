@@ -14,6 +14,11 @@
 
 export GO111MODULE=on
 
+SOURCES:=$(shell find . -name '*.go' ! -name '*_test.go')
+GOMOD := $(shell go env GOMOD)
+# GOSUM := $(GOMOD:.mod=.sum)
+DOCKER_IMAGE_TAG?=latest
+
 .PHONY: clean docker all test
 
 SUBDIRS:=fortune server
@@ -22,7 +27,7 @@ DOCKER_TAG:=latest
 GO       = go
 NAME     = fortune-server
 
-fortune-server all:
+fortune-server all: $(SOURCES) $(GOMOD) # $(GOSUM)
 	$(GO) build -o $(NAME) main.go
 
 test:
