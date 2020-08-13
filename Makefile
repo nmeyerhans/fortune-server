@@ -13,6 +13,7 @@
 # limitations under the License.
 
 export GO111MODULE=on
+export DOCKER_BUILDKIT=1
 
 SOURCES:=$(shell find . -name '*.go' ! -name '*_test.go')
 GOMOD := $(shell go env GOMOD)
@@ -40,5 +41,4 @@ clean:
 	go clean
 
 docker: fortune-server
-	docker build --pull=true -t fortune-server:$(DOCKER_TAG) .
-
+	docker build --progress=plain --pull=true -t fortune-server:$(DOCKER_TAG) .
